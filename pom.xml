@@ -10,11 +10,9 @@
     <name>oauth2</name>
 
     <properties>
-        <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.glassfish>4.0</version.glassfish>
-        <glassFishHome>${basedir}/glassfish4</glassFishHome>
-        <GLASSFISH_HOME>${basedir}/glassfish4</GLASSFISH_HOME>
+        <version.oltu>1.0.0-SNAPSHOT</version.oltu>
     </properties>
     
     <dependencyManagement>
@@ -35,35 +33,27 @@
             <artifactId>jersey-client</artifactId>
             <version>2.0</version>
             <scope>test</scope>
-            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.9.11</version>
             <scope>test</scope>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-web-api</artifactId>
-            <version>7.0</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.oltu.oauth2</groupId>
             <artifactId>org.apache.oltu.oauth2.common</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${version.oltu}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.oltu.oauth2</groupId>
             <artifactId>org.apache.oltu.oauth2.authzserver</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${version.oltu}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.oltu.oauth2</groupId>
             <artifactId>org.apache.oltu.oauth2.resourceserver</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${version.oltu}</version>
         </dependency>
         
         <!-- Test -->
@@ -74,57 +64,34 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.shrinkwrap</groupId>
-            <artifactId>shrinkwrap-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!--
-        <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-api-maven</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-spi</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-spi-maven</artifactId>
-            <scope>test</scope>
-        </dependency>
-        -->
-        <dependency>
             <groupId>org.jboss.arquillian.testng</groupId>
             <artifactId>arquillian-testng-container</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-api</artifactId>
-            <version>1.0.0-beta-7</version>
+            <artifactId>shrinkwrap-resolver-depchain</artifactId>
+            <type>pom</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.oltu.oauth2</groupId>
+            <artifactId>org.apache.oltu.oauth2.client</artifactId>
+            <version>${version.oltu}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.0</version>
             <scope>test</scope>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-api-maven</artifactId>
-            <version>1.0.0-beta-7</version>
-            <scope>test</scope>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
-            <version>1.0.0-beta-7</version>
-            <scope>test</scope>
-            <type>jar</type>
+            <groupId>javax</groupId>
+            <artifactId>javaee-web-api</artifactId>
+            <version>7.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -156,9 +123,6 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
-                    <compilerArguments>
-                        <endorseddirs>${endorsed.dir}</endorseddirs>
-                    </compilerArguments>
                 </configuration>
             </plugin>
             <plugin>
@@ -169,40 +133,12 @@
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.6</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${endorsed.dir}</outputDirectory>
-                            <silent>true</silent>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>javax</groupId>
-                                    <artifactId>javaee-endorsed-api</artifactId>
-                                    <version>7.0</version>
-                                    <type>jar</type>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
             <id>glassfish-managed-4.0</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.arquillian.container</groupId>
@@ -212,12 +148,58 @@
                 </dependency>
             </dependencies>
             <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>2.15</version>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <arquillian.launch>gf4_managed</arquillian.launch>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
                 <testResources>
                     <testResource>
                         <directory>src/test/resources</directory>
                     </testResource>
                     <testResource>
                         <directory>src/test/resources-glassfish-managed</directory>
+                    </testResource>
+                </testResources>
+            </build>
+        </profile>
+        <profile>
+            <id>glassfish-remote-4.0</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.arquillian.container</groupId>
+                    <artifactId>arquillian-glassfish-remote-3.1</artifactId>
+                    <version>1.0.0.CR4</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>2.15</version>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <arquillian.launch>gf4_remote</arquillian.launch>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+                <testResources>
+                    <testResource>
+                        <directory>src/test/resources</directory>
+                    </testResource>
+                    <testResource>
+                        <directory>src/test/resources-glassfish-remote</directory>
                     </testResource>
                 </testResources>
             </build>
