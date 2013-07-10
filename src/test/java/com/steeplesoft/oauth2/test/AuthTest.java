@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -13,7 +14,20 @@ import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import junit.framework.Assert;
+import org.apache.oltu.oauth2.client.OAuthClient;
+import org.apache.oltu.oauth2.client.URLConnectionClient;
+import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
+import org.apache.oltu.oauth2.client.response.OAuthAccessTokenResponse;
+import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
+import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
+import org.apache.oltu.oauth2.common.message.types.GrantType;
+import org.apache.oltu.oauth2.common.message.types.ResponseType;
 import org.apache.oltu.oauth2.common.utils.OAuthUtils;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -23,92 +37,105 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.DependencyResolvers;
-import org.jboss.shrinkwrap.resolver.api.maven.MavenDependencyResolver;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import static org.junit.Assert.assertNotNull;
 import org.testng.annotations.Test;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
  *
  * @author jdlee
  */
 @RunAsClient
 public class AuthTest extends Arquillian {
-    @ArquillianResource 
+
+    @ArquillianResource
     private URL url;
+    private Client client = JerseyClientBuilder.newClient();
 
     @Deployment
     public static WebArchive createDeployment() {
-        WebArchive archive = null;
-        try {
-            MavenDependencyResolver resolver = 
-                    DependencyResolvers.use(MavenDependencyResolver.class).loadMetadataFromPom("pom.xml");
-
-//            final PomEquippedResolveStage resolver = Maven.resolver().loadPomFromFile("pom.xml");
-//            resolver.resolve().withTransitivity().asFile();
-
-            archive = ShrinkWrap.create(WebArchive.class)
-                    .addPackages(true, "com.steeplesoft.oauth2")
-                    .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml")
-                    .addAsWebInfResource(new FileAsset(new File("src/main/webapp/WEB-INF/web.xml")), "web.xml")
-                    .addAsLibraries(resolver.artifacts(
-                        "org.apache.oltu.oauth2:org.apache.oltu.oauth2.common",
-                        "org.apache.oltu.oauth2:org.apache.oltu.oauth2.authzserver",
-                        "org.apache.oltu.oauth2:org.apache.oltu.oauth2.resourceserver"
-                    ).resolveAsFiles())
-            ;
-            System.out.println(archive.toString(true));
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
+        WebArchive archive = ShrinkWrap.create(WebArchive.class)
+                .addPackages(true, "com.steeplesoft.oauth2")
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+                .addAsWebInfResource(new FileAsset(new File("src/main/webapp/WEB-INF/web.xml")), "web.xml")
+                .addAsLibraries(Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().resolve().withTransitivity().asFile());
         return archive;
     }
 
     @Test
-    public void testAuthz() {
+    public void authorizationRequest() {
         try {
-            System.out.println("Test!");
+            Response response = makeAuthCodeRequest();
+            Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+            String authCode = getAuthCode(response);
+            Assert.assertNotNull(authCode);
+        } catch (OAuthSystemException | URISyntaxException | JSONException ex) {
+            Logger.getLogger(AuthTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Test
+    public void authCodeTokenRequest() throws OAuthSystemException {
+        try {
+            Response response = makeAuthCodeRequest();
+            Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+            String authCode = getAuthCode(response);
+            Assert.assertNotNull(authCode);
+            OAuthAccessTokenResponse oauthResponse = makeTokenRequestWithAuthCode(authCode);
+            assertNotNull(oauthResponse.getAccessToken());
+            assertNotNull(oauthResponse.getExpiresIn());
+        } catch (OAuthSystemException | URISyntaxException | JSONException | OAuthProblemException ex) {
+            Logger.getLogger(AuthTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Test
+    public void directTokenRequest() {
+        try {
+            OAuthClientRequest request = OAuthClientRequest
+                    .tokenLocation(url.toString() + "api/token")
+                    .setGrantType(GrantType.PASSWORD)
+                    .setClientId(Common.CLIENT_ID)
+                    .setClientSecret(Common.CLIENT_SECRET)
+                    .setUsername(Common.USERNAME)
+                    .setPassword(Common.PASSWORD)
+                    .buildBodyMessage();
+
+            OAuthClient oAuthClient = new OAuthClient(new URLConnectionClient());
+            OAuthAccessTokenResponse oauthResponse = oAuthClient.accessToken(request);
+            assertNotNull(oauthResponse.getAccessToken());
+            assertNotNull(oauthResponse.getExpiresIn());
+        } catch (OAuthSystemException | OAuthProblemException ex ) {
+            Logger.getLogger(AuthTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Test
+    public void endToEndWithAuthCode() {
+        try {
+            Response response = makeAuthCodeRequest();
+            Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
+            String authCode = getAuthCode(response);
+            Assert.assertNotNull(authCode);
+            
+            OAuthAccessTokenResponse oauthResponse = makeTokenRequestWithAuthCode(authCode);
+            String accessToken = oauthResponse.getAccessToken();
+            
             URL restUrl = new URL(url.toString() + "api/resource");
-            System.out.println(restUrl.toString());
-            Client client = JerseyClientBuilder.newClient();
             WebTarget target = client.target(restUrl.toURI());
-            String response = target.request(MediaType.TEXT_HTML)
-                    .header(Common.HEADER_AUTHORIZATION, Common.AUTHORIZATION_HEADER_OAUTH2)
+            String entity = target.request(MediaType.TEXT_HTML)
+                    .header(Common.HEADER_AUTHORIZATION, "Bearer " + accessToken)
                     .get(String.class);
-            System.out.println("Response = " + response);
-        } catch (MalformedURLException | URISyntaxException ex) {
+            System.out.println("Response = " + entity);
+        } catch (MalformedURLException | URISyntaxException | OAuthProblemException | OAuthSystemException | JSONException ex) {
             Logger.getLogger(AuthTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-
-    public static void main(String[] args) {
-        new AuthTest().run();
-    }
-
-    public void run() {
-        try {
-            URL url = new URL("http://localhost:8080/oauth2-1.0-SNAPSHOT/api/resource");
-            URLConnection c = url.openConnection();
-            c.addRequestProperty(Common.HEADER_AUTHORIZATION, Common.AUTHORIZATION_HEADER_OAUTH2);
-
-            if (c instanceof HttpURLConnection) {
-                HttpURLConnection httpURLConnection = (HttpURLConnection) c;
-                httpURLConnection.setRequestMethod("GET");
-
-                testValidTokenResponse(httpURLConnection);
-            }
-        } catch (Exception ex) {
-            Logger.getLogger(AuthTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
     }
 
     void testValidTokenResponse(HttpURLConnection httpURLConnection) throws Exception {
-
         InputStream inputStream;
         if (httpURLConnection.getResponseCode() == 400) {
             inputStream = httpURLConnection.getErrorStream();
@@ -117,5 +144,43 @@ public class AuthTest extends Arquillian {
         }
         String responseBody = OAuthUtils.saveStreamAsString(inputStream);
         assert (Common.ACCESS_TOKEN_VALID.equals(responseBody));
+    }
+
+    private Response makeAuthCodeRequest() throws OAuthSystemException, URISyntaxException {
+        OAuthClientRequest request = OAuthClientRequest
+                .authorizationLocation(url.toString() + "api/authz")
+                .setClientId(Common.CLIENT_ID)
+                .setRedirectURI(url.toString() + "api/redirect")
+                .setResponseType(ResponseType.CODE.toString())
+                .setState("state")
+                .buildQueryMessage();
+        WebTarget target = client.target(new URI(request.getLocationUri()));
+        Response response = target.request(MediaType.TEXT_HTML).get();
+        return response;
+    }
+
+    private String getAuthCode(Response response) throws JSONException {
+        JSONObject obj = new JSONObject(response.readEntity(String.class));
+        JSONObject qp = obj.getJSONObject("queryParameters");
+        String authCode = null;
+        if (qp != null) {
+            authCode = qp.getString("code");
+        }
+
+        return authCode;
+    }
+
+    private OAuthAccessTokenResponse makeTokenRequestWithAuthCode(String authCode) throws OAuthProblemException, OAuthSystemException {
+        OAuthClientRequest request = OAuthClientRequest
+                .tokenLocation(url.toString() + "api/token")
+                .setClientId(Common.CLIENT_ID)
+                .setClientSecret(Common.CLIENT_SECRET)
+                .setGrantType(GrantType.AUTHORIZATION_CODE)
+                .setCode(authCode)
+                .setRedirectURI(url.toString() + "api/redirect")
+                .buildBodyMessage();
+        OAuthClient oAuthClient = new OAuthClient(new URLConnectionClient());
+        OAuthAccessTokenResponse oauthResponse = oAuthClient.accessToken(request);
+        return oauthResponse;
     }
 }

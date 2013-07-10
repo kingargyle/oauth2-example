@@ -21,10 +21,11 @@
 package com.steeplesoft.oauth2.endpoints;
 
 import com.steeplesoft.oauth2.Common;
+import com.steeplesoft.oauth2.Database;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -50,8 +51,11 @@ import org.apache.oltu.oauth2.common.message.types.GrantType;
  */
 @Path("/token")
 public class TokenEndpoint {
+    @Inject
+    private Database database;
+    
     public static final String INVALID_CLIENT_DESCRIPTION = "Client authentication failed (e.g., unknown client, no client authentication included, or unsupported authentication method).";
-
+    
     @POST
     @Consumes("application/x-www-form-urlencoded")
     @Produces("application/json")
@@ -83,10 +87,13 @@ public class TokenEndpoint {
                 // refresh token is not supported in this implementation
                 buildInvalidUserPassResponse();
             }
-
+            
+            final String accessToken = oauthIssuerImpl.accessToken();
+            database.addToken(accessToken);
+            
             OAuthResponse response = OAuthASResponse
                     .tokenResponse(HttpServletResponse.SC_OK)
-                    .setAccessToken(oauthIssuerImpl.accessToken())
+                    .setAccessToken(accessToken)
                     .setExpiresIn("3600")
                     .buildJSONMessage();
             return Response.status(response.getResponseStatus()).entity(response.getBody()).build();
@@ -134,15 +141,15 @@ public class TokenEndpoint {
     }
 
     private boolean checkClientId(String clientId) {
-        return Common.CLIENT_ID.equals(clientId);
+        return true;
     }
 
     private boolean checkClientSecret(String secret) {
-        return Common.CLIENT_SECRET.equals(secret);
+        return true;
     }
 
     private boolean checkAuthCode(String authCode) {
-        return Common.AUTHORIZATION_CODE.equals(authCode);
+        return database.isValidAuthCode(authCode);
     }
 
     private boolean checkUserPass(String user, String pass) {

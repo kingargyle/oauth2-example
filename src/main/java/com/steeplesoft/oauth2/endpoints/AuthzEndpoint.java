@@ -4,14 +4,18 @@
  */
 package com.steeplesoft.oauth2.endpoints;
 
+import com.steeplesoft.oauth2.Database;
 import java.net.URI;
 import java.net.URISyntaxException;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.oltu.oauth2.as.issuer.MD5Generator;
 import org.apache.oltu.oauth2.as.issuer.OAuthIssuerImpl;
@@ -31,6 +35,9 @@ import org.apache.oltu.oauth2.common.utils.OAuthUtils;
 @Path("/authz")
 public class AuthzEndpoint {
 
+    @Inject
+    private Database database;
+
     @GET
     public Response authorize(@Context HttpServletRequest request)
             throws URISyntaxException, OAuthSystemException {
@@ -41,14 +48,19 @@ public class AuthzEndpoint {
             //build response according to response_type
             String responseType = oauthRequest.getParam(OAuth.OAUTH_RESPONSE_TYPE);
 
-            OAuthASResponse.OAuthAuthorizationResponseBuilder builder = 
+            OAuthASResponse.OAuthAuthorizationResponseBuilder builder =
                     OAuthASResponse.authorizationResponse(request, HttpServletResponse.SC_FOUND);
 
             if (responseType.equals(ResponseType.CODE.toString())) {
-                builder.setCode(oauthIssuerImpl.authorizationCode());
+                final String authorizationCode = oauthIssuerImpl.authorizationCode();
+                database.addAuthCode(authorizationCode);
+                builder.setCode(authorizationCode);
             }
             if (responseType.equals(ResponseType.TOKEN.toString())) {
-                builder.setAccessToken(oauthIssuerImpl.accessToken());
+                final String accessToken = oauthIssuerImpl.accessToken();
+                database.addToken(accessToken);
+
+                builder.setAccessToken(accessToken);
                 builder.setExpiresIn(3600l);
             }
 
@@ -69,7 +81,8 @@ public class AuthzEndpoint {
                 throw new WebApplicationException(
                         responseBuilder.entity("OAuth callback url needs to be provided by client!!!").build());
             }
-            final OAuthResponse response = OAuthASResponse.errorResponse(HttpServletResponse.SC_FOUND)
+            final OAuthResponse response =
+                    OAuthASResponse.errorResponse(HttpServletResponse.SC_FOUND)
                     .error(e)
                     .location(redirectUri).buildQueryMessage();
             final URI location = new URI(response.getLocationUri());

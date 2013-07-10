@@ -21,6 +21,8 @@
 package com.steeplesoft.oauth2.endpoints;
 
 import com.steeplesoft.oauth2.Common;
+import com.steeplesoft.oauth2.Database;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -46,6 +48,8 @@ import org.apache.oltu.oauth2.rs.response.OAuthRSResponse;
  */
 @Path("/resource")
 public class ResourceEndpoint {
+    @Inject
+    private Database database;
 
     @GET
     @Produces("text/html")
@@ -57,7 +61,7 @@ public class ResourceEndpoint {
             String accessToken = oauthRequest.getAccessToken();
 
             // Validate the access token
-            if (!Common.ACCESS_TOKEN_VALID.equals(accessToken)) {
+            if (!database.isValidToken(accessToken)) {
                 // Return the OAuth error message
                 OAuthResponse oauthResponse = OAuthRSResponse
                         .errorResponse(HttpServletResponse.SC_UNAUTHORIZED)
