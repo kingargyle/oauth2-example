@@ -65,16 +65,11 @@ public class AuthzEndpoint {
             }
 
             String redirectURI = oauthRequest.getParam(OAuth.OAUTH_REDIRECT_URI);
-
             final OAuthResponse response = builder.location(redirectURI).buildQueryMessage();
             URI url = new URI(response.getLocationUri());
-
             return Response.status(response.getResponseStatus()).location(url).build();
-
         } catch (OAuthProblemException e) {
-
             final Response.ResponseBuilder responseBuilder = Response.status(HttpServletResponse.SC_FOUND);
-
             String redirectUri = e.getRedirectUri();
 
             if (OAuthUtils.isEmpty(redirectUri)) {
@@ -83,8 +78,7 @@ public class AuthzEndpoint {
             }
             final OAuthResponse response =
                     OAuthASResponse.errorResponse(HttpServletResponse.SC_FOUND)
-                    .error(e)
-                    .location(redirectUri).buildQueryMessage();
+                    .error(e).location(redirectUri).buildQueryMessage();
             final URI location = new URI(response.getLocationUri());
             return responseBuilder.location(location).build();
         }

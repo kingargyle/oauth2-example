@@ -8,7 +8,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
@@ -34,7 +33,6 @@ import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
@@ -56,9 +54,11 @@ public class AuthTest extends Arquillian {
     public static WebArchive createDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class)
                 .addPackages(true, "com.steeplesoft.oauth2")
-                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+                .addAsWebInfResource(new FileAsset(new File("src/main/webapp/WEB-INF/beans.xml")), "beans.xml")
+//                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
                 .addAsWebInfResource(new FileAsset(new File("src/main/webapp/WEB-INF/web.xml")), "web.xml")
-                .addAsLibraries(Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().resolve().withTransitivity().asFile());
+                .addAsLibraries(Maven.resolver().loadPomFromFile("pom.xml")
+                    .importRuntimeDependencies().resolve().withTransitivity().asFile());
         return archive;
     }
 
