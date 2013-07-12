@@ -29,7 +29,6 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.testng.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -43,19 +42,17 @@ import org.testng.annotations.Test;
  *
  * @author jdlee
  */
-@RunAsClient
 public class AuthTest extends Arquillian {
 
     @ArquillianResource
     private URL url;
     private Client client = JerseyClientBuilder.newClient();
 
-    @Deployment
+    @Deployment(testable=false)
     public static WebArchive createDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class)
                 .addPackages(true, "com.steeplesoft.oauth2")
                 .addAsWebInfResource(new FileAsset(new File("src/main/webapp/WEB-INF/beans.xml")), "beans.xml")
-//                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
                 .addAsWebInfResource(new FileAsset(new File("src/main/webapp/WEB-INF/web.xml")), "web.xml")
                 .addAsLibraries(Maven.resolver().loadPomFromFile("pom.xml")
                     .importRuntimeDependencies().resolve().withTransitivity().asFile());
