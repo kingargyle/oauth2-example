@@ -22,9 +22,11 @@ package com.steeplesoft.oauth2.endpoints;
 
 import com.steeplesoft.oauth2.Common;
 import com.steeplesoft.oauth2.Database;
+
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -50,7 +52,7 @@ import org.apache.oltu.oauth2.common.message.types.GrantType;
  *
  */
 @Path("/token")
-public class TokenEndpoint {
+public class TokenEndpoint  {
     @Inject
     private Database database;
     
