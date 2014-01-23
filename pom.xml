@@ -13,12 +13,19 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.glassfish>4.0</version.glassfish>
-		<version.oltu>0.31</version.oltu>
+		<version.oltu>1.0.0-SNAPSHOT</version.oltu>
 		<jetty-version>8.1.14.v20131031</jetty-version>
 	</properties>
 
 	<dependencies>
 
+		<dependency>
+			<groupId>org.codehaus.jettison</groupId>
+			<artifactId>jettison</artifactId>
+			<version>1.3.1</version>
+		</dependency>
+
+		<!-- Jersey Dependencies -->
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-client</artifactId>
@@ -35,18 +42,20 @@
 			<version>2.4.1</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.glassfish.jersey.containers</groupId>
-		    <artifactId>jersey-container-servlet</artifactId>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet</artifactId>
 			<version>2.4.1</version>
-		</dependency>		
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.0</version>
-            <scope>test</scope>
-            <type>jar</type>
-        </dependency>
-        <dependency>
+		</dependency>
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>javax.ws.rs-api</artifactId>
+			<version>2.0</version>
+			<scope>test</scope>
+			<type>jar</type>
+		</dependency>
+
+		<!-- Log4J dependencies -->
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.6.1</version>
@@ -58,6 +67,8 @@
 			<version>1.9.11</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- OAuth2 dependencies -->
 		<dependency>
 			<groupId>org.apache.oltu.oauth2</groupId>
 			<artifactId>org.apache.oltu.oauth2.common</artifactId>
@@ -123,6 +134,14 @@
 			<version>4.8.1</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-mock</artifactId>
+			<version>2.0.8</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 	<build>

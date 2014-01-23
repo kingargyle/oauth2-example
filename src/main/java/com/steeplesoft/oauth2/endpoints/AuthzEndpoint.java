@@ -39,8 +39,7 @@ import org.apache.oltu.oauth2.common.utils.OAuthUtils;
 @Path("/authz")
 public class AuthzEndpoint {
 
-    @Inject
-    private Database database;
+    private Database database = Database.getInstance();
 
     @GET
     public Response authorize(@Context HttpServletRequest request)
@@ -57,6 +56,7 @@ public class AuthzEndpoint {
 
             if (responseType.equals(ResponseType.CODE.toString())) {
                 final String authorizationCode = oauthIssuerImpl.authorizationCode();
+                
                 database.addAuthCode(authorizationCode);
                 builder.setCode(authorizationCode);
             }

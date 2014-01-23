@@ -8,8 +8,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
@@ -19,10 +17,13 @@ import javax.ws.rs.core.Response.Status;
 
 import junit.framework.Assert;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.oltu.oauth2.client.OAuthClient;
 import org.apache.oltu.oauth2.client.URLConnectionClient;
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
 import org.apache.oltu.oauth2.client.response.OAuthAccessTokenResponse;
+import org.apache.oltu.oauth2.common.OAuth;
 import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
 import org.apache.oltu.oauth2.common.message.types.GrantType;
@@ -45,8 +46,10 @@ import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.steeplesoft.oauth2.Common;
+import com.steeplesoft.oauth2.Database;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -58,13 +61,15 @@ import static org.junit.Assert.assertNotNull;
  */
 public class AuthIT {
 
+	static final Logger logger = Logger.getLogger(Test.class);	
 	private static URL url;
 	private Client client = JerseyClientBuilder.newClient();
 	private static Server server;
+	private static Database db = Database.getInstance();
 
 	@BeforeClass
 	public static void startJettyServer() throws Exception {
-		System.setProperty("DEBUG", "true");
+		PropertyConfigurator.configure("src/test/resources/log4j.properties");
 		url = new URL("http://localhost:9080/");
 		server = new Server(9080);
 
@@ -84,7 +89,6 @@ public class AuthIT {
         server.setHandler(context);
         
 		server.start();
-		server.dump(System.err);
 	}
 
 	@AfterClass
@@ -101,6 +105,7 @@ public class AuthIT {
 		int responseCode = connection.getResponseCode();
 		assertEquals(200, responseCode);
 	}
+	
 
 	@Test
 	public void authorizationRequest() throws Exception {
@@ -132,6 +137,8 @@ public class AuthIT {
 					.setClientSecret(Common.CLIENT_SECRET)
 					.setUsername(Common.USERNAME).setPassword(Common.PASSWORD)
 					.buildBodyMessage();
+			
+			System.out.println(request.toString());
 
 			OAuthClient oAuthClient = new OAuthClient(new URLConnectionClient());
 			OAuthAccessTokenResponse oauthResponse = oAuthClient
@@ -191,6 +198,7 @@ public class AuthIT {
 		String authCode = null;
 		if (qp != null) {
 			authCode = qp.getString("code");
+			System.out.println("Auth Code: " + authCode);
 		}
 
 		return authCode;

@@ -50,8 +50,7 @@ import org.apache.oltu.oauth2.rs.response.OAuthRSResponse;
  */
 @Path("/resource")
 public class ResourceEndpoint {
-    @Inject
-    private Database database;
+    private Database database = Database.getInstance();
 
     @GET
     @Produces("text/html")

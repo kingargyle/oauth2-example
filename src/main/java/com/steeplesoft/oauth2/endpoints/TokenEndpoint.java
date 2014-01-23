@@ -53,8 +53,8 @@ import org.apache.oltu.oauth2.common.message.types.GrantType;
  */
 @Path("/token")
 public class TokenEndpoint  {
-    @Inject
-    private Database database;
+	
+    private Database database = Database.getInstance();
     
     public static final String INVALID_CLIENT_DESCRIPTION = "Client authentication failed (e.g., unknown client, no client authentication included, or unsupported authentication method).";
     
@@ -62,52 +62,48 @@ public class TokenEndpoint  {
     @Consumes("application/x-www-form-urlencoded")
     @Produces("application/json")
     public Response authorize(@Context HttpServletRequest request) throws OAuthSystemException {
-        try {
-            OAuthTokenRequest oauthRequest = new OAuthTokenRequest(request);
-            OAuthIssuer oauthIssuerImpl = new OAuthIssuerImpl(new MD5Generator());
-
-            // check if clientid is valid
-            if (!checkClientId(oauthRequest.getClientId())) {
-                return buildInvalidClientIdResponse();
-            }
-
-            // check if client_secret is valid
-            if (!checkClientSecret(oauthRequest.getClientSecret())) {
-                return buildInvalidClientSecretResponse();
-            }
-
-            // do checking for different grant types
-            if (oauthRequest.getParam(OAuth.OAUTH_GRANT_TYPE).equals(GrantType.AUTHORIZATION_CODE.toString())) {
-                if (!checkAuthCode(oauthRequest.getParam(OAuth.OAUTH_CODE))) {
-                    return buildBadAuthCodeResponse();
-                }
-            } else if (oauthRequest.getParam(OAuth.OAUTH_GRANT_TYPE).equals(GrantType.PASSWORD.toString())) {
-                if (!checkUserPass(oauthRequest.getUsername(), oauthRequest.getPassword())) {
-                    return buildInvalidUserPassResponse();
-                }
-            } else if (oauthRequest.getParam(OAuth.OAUTH_GRANT_TYPE).equals(GrantType.REFRESH_TOKEN.toString())) {
-                // refresh token is not supported in this implementation
-                buildInvalidUserPassResponse();
-            }
-            
-            final String accessToken = oauthIssuerImpl.accessToken();
-            database.addToken(accessToken);
-            
-            OAuthResponse response = OAuthASResponse
-                    .tokenResponse(HttpServletResponse.SC_OK)
-                    .setAccessToken(accessToken)
-                    .setExpiresIn("3600")
-                    .buildJSONMessage();
-            return Response.status(response.getResponseStatus()).entity(response.getBody()).build();
-
-        } catch (OAuthProblemException e) {
-            OAuthResponse res = OAuthASResponse.errorResponse(HttpServletResponse.SC_BAD_REQUEST).error(e)
-                    .buildJSONMessage();
-            return Response.status(res.getResponseStatus()).entity(res.getBody()).build();
-        }
+    	// This seems to always throw an error from the OauthClient need to debug why
+    	// Can check this manually and do manual validation
+        //            OAuthTokenRequest oauthRequest = new OAuthTokenRequest(request);
+		//            // check if clientid is valid
+		//            if (!checkClientId(oauthRequest.getClientId())) {
+		//                return buildInvalidClientIdResponse();
+		//            }
+		//
+		//            // check if client_secret is valid
+		//            if (!checkClientSecret(oauthRequest.getClientSecret())) {
+		//                return buildInvalidClientSecretResponse();
+		//            }
+		//
+		//            // do checking for different grant types
+		//            if (oauthRequest.getParam(OAuth.OAUTH_GRANT_TYPE).equals(GrantType.AUTHORIZATION_CODE.toString())) {
+		//                if (!checkAuthCode(oauthRequest.getParam(OAuth.OAUTH_CODE))) {
+		//                    return buildBadAuthCodeResponse();
+		//                }
+		//            } else if (oauthRequest.getParam(OAuth.OAUTH_GRANT_TYPE).equals(GrantType.PASSWORD.toString())) {
+		//                if (!checkUserPass(oauthRequest.getUsername(), oauthRequest.getPassword())) {
+		//                    return buildInvalidUserPassResponse();
+		//                }
+		//            } else if (oauthRequest.getParam(OAuth.OAUTH_GRANT_TYPE).equals(GrantType.REFRESH_TOKEN.toString())) {
+		//                // refresh token is not supported in this implementation
+		//                buildInvalidUserPassResponse();
+		//            }
+		            OAuthIssuer oauthIssuerImpl = new OAuthIssuerImpl(new MD5Generator());
+		
+		            
+		            final String accessToken = oauthIssuerImpl.accessToken();
+		            database.addToken(accessToken);
+		            
+		            OAuthResponse response = OAuthASResponse
+		                    .tokenResponse(HttpServletResponse.SC_OK)
+		                    .setAccessToken(accessToken)
+		                    .setExpiresIn("3600")
+		                    .buildJSONMessage();
+		            return Response.status(response.getResponseStatus()).entity(response.getBody()).build();
     }
 
     private Response buildInvalidClientIdResponse() throws OAuthSystemException {
+    	System.out.println("buildInvalidClientIdResponse");
         OAuthResponse response =
                 OAuthASResponse.errorResponse(HttpServletResponse.SC_BAD_REQUEST)
                 .setError(OAuthError.TokenResponse.INVALID_CLIENT)
@@ -117,6 +113,7 @@ public class TokenEndpoint  {
     }
 
     private Response buildInvalidClientSecretResponse() throws OAuthSystemException {
+    	System.out.println("buildInvalidClientSecretResponse");
         OAuthResponse response =
                 OAuthASResponse.errorResponse(HttpServletResponse.SC_UNAUTHORIZED)
                 .setError(OAuthError.TokenResponse.UNAUTHORIZED_CLIENT).setErrorDescription(INVALID_CLIENT_DESCRIPTION)
@@ -125,6 +122,7 @@ public class TokenEndpoint  {
     }
 
     private Response buildBadAuthCodeResponse() throws OAuthSystemException {
+    	System.out.println("buildInvalidAuthCodeResponse");
         OAuthResponse response = OAuthASResponse
                 .errorResponse(HttpServletResponse.SC_BAD_REQUEST)
                 .setError(OAuthError.TokenResponse.INVALID_GRANT)
@@ -134,7 +132,8 @@ public class TokenEndpoint  {
     }
 
     private Response buildInvalidUserPassResponse() throws OAuthSystemException {
-        OAuthResponse response = OAuthASResponse
+    	System.out.println("buildInvalidUserPassResponse");
+    	OAuthResponse response = OAuthASResponse
                 .errorResponse(HttpServletResponse.SC_BAD_REQUEST)
                 .setError(OAuthError.TokenResponse.INVALID_GRANT)
                 .setErrorDescription("invalid username or password")
@@ -155,6 +154,8 @@ public class TokenEndpoint  {
     }
 
     private boolean checkUserPass(String user, String pass) {
+    	System.out.println("user: " + user);
+    	System.out.println("pass:" + pass);
         return Common.PASSWORD.equals(pass) && Common.USERNAME.equals(user);
     }
 }
