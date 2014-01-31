@@ -13,7 +13,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.glassfish>4.0</version.glassfish>
-		<version.oltu>1.0.0-SNAPSHOT</version.oltu>
+		<version.oltu>0.31</version.oltu>
 		<jetty-version>8.1.14.v20131031</jetty-version>
 	</properties>
 
